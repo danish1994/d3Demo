@@ -1,0 +1,161 @@
+<html>
+<head>
+    <style>
+        #chart path {
+            fill: transparent;
+            stroke: black;
+        }
+    </style>
+</head>
+<body>
+<svg id="chart" width="500" height="500">
+</svg>
+<button onclick="addButton()">Add Box</button>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/interactjs@1.3.4/dist/interact.min.js"></script>
+<script>
+    const svg = d3.select("#chart");
+
+    const polygons = [
+        {
+            name: 1,
+            points: [
+                {x: 10, y: 10},
+                {x: 20, y: 10},
+                {x: 20, y: 20},
+                {x: 10, y: 20}
+            ],
+            fill: "fill:lime;stroke:black;stroke-width:1"
+        },
+        {
+            name: 2,
+            points: [
+                {x: 50, y: 10},
+                {x: 60, y: 10},
+                {x: 60, y: 20},
+                {x: 50, y: 20}
+            ],
+            fill: "fill:lime;stroke:black;stroke-width:1"
+        }
+    ];
+
+    const lines = [
+        {
+            source: 1,
+            target: 2
+        }
+    ];
+
+    function updateSVG () {
+        svg.selectAll("*").remove();
+
+        const d3Line = d3.svg
+            .line()
+            .x(d => d.x)
+            .y(d => d.y)
+            .interpolate("basis");
+
+        lines.map(({source, target}) => {
+            source = getCoordinateByName(source);
+            target = getCoordinateByName(target);
+
+            if (source && target) {
+                svg
+                    .append("path")
+                    .attr("stroke-width", 2)
+                    .attr("d", d3Line([source, target]));
+            }
+        });
+
+        polygons.map((polygon, i) => {
+            svg
+                .append("polygon")
+                .attr(
+                    "points",
+                    polygon.points
+                        .map(({x, y}) => {
+                            return [x, y].join(",");
+                        })
+                        .join(",")
+                )
+                .attr('class', 'draggable')
+                .attr('index', i)
+                .attr("fill:lime;stroke:purple;stroke-width:1");
+        });
+    }
+
+    function getCoordinateByName (name) {
+        const polygon = findPolygonByName(name);
+        if (polygon) {
+            return {
+                x: (polygon.points[0].x + polygon.points[1].x) / 2,
+                y: (polygon.points[1].y + polygon.points[2].y) / 2
+            };
+        }
+    }
+
+    function findPolygonByName (name) {
+        return polygons.find(({name: polygonName}) => polygonName === name);
+    }
+
+    function updatePolygonPosition (i, x, y) {
+        polygons[i].points = [
+            {x: x - 5, y: y - 5},
+            {x: x + 5, y: y - 5},
+            {x: x + 5, y: y + 5},
+            {x: x - 5, y: y + 5}
+        ];
+        updateSVG();
+    }
+
+    function addPolygon (x, y) {
+        polygons.push(
+            {
+                name: polygons.length,
+                points: [
+                    {x: x - 5, y: y - 5},
+                    {x: x + 5, y: y - 5},
+                    {x: x + 5, y: y + 5},
+                    {x: x - 5, y: y + 5}
+                ],
+                fill: "fill:lime;stroke:black;stroke-width:1"
+            }
+        );
+
+        updateSVG();
+    }
+
+    updateSVG();
+
+</script>
+<script>
+    interact('.draggable')
+        .draggable({
+            inertia: true,
+            autoScroll: true,
+            onmove: dragMoveListener,
+        });
+
+    function dragMoveListener (event) {
+        const target = event.target,
+            x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx,
+            y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy,
+            i = target.getAttribute('index');
+
+        target.style.webkitTransform =
+            target.style.transform =
+                'translate(' + x + 'px, ' + y + 'px)';
+
+        target.setAttribute('data-x', x);
+        target.setAttribute('data-y', y);
+
+        updatePolygonPosition(i, x, y);
+    }
+</script>
+<script>
+    function addButton () {
+        addPolygon(250, 250);
+    }
+</script>
+</body>
+</html>
