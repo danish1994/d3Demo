@@ -15,6 +15,7 @@
 <script src="https://cdn.jsdelivr.net/npm/interactjs@1.3.4/dist/interact.min.js"></script>
 <script>
     const svg = d3.select("#chart");
+    let selectedPoint;
 
     const polygons = [
         {
@@ -70,6 +71,9 @@
         polygons.map((polygon, i) => {
             svg
                 .append("polygon")
+                .on({
+                    'click': polygonClick.bind(this, i)
+                })
                 .attr(
                     "points",
                     polygon.points
@@ -80,8 +84,25 @@
                 )
                 .attr('class', 'draggable')
                 .attr('index', i)
-                .attr("fill:lime;stroke:purple;stroke-width:1");
+                .attr("fill:lime;stroke:purple;stroke-width:1")
         });
+    }
+
+    function polygonClick (i) {
+        if (selectedPoint) {
+            if (selectedPoint.name !== polygons[i].name) {
+                lines.push({
+                    source: selectedPoint.name,
+                    target: polygons[i].name
+                })
+            }
+            selectedPoint = undefined;
+
+            console.log(lines)
+            updateSVG();
+        } else {
+            selectedPoint = polygons[i];
+        }
     }
 
     function getCoordinateByName (name) {
@@ -111,7 +132,7 @@
     function addPolygon (x, y) {
         polygons.push(
             {
-                name: polygons.length,
+                name: polygons.length + 1,
                 points: [
                     {x: x - 5, y: y - 5},
                     {x: x + 5, y: y - 5},
