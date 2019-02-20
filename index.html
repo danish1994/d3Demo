@@ -19,6 +19,7 @@
 <script>
     const svg = d3.select('svg');
     const polygonWidth = 20;
+    const lineStroke = 3;
     let selectedPoint;
 
     const polygons = [];
@@ -41,7 +42,7 @@
             if (source && target) {
                 svg
                     .append('path')
-                    .attr('stroke-width', 2)
+                    .attr('stroke-width', lineStroke)
                     .attr('stroke', 'black')
                     .attr('fill', 'transparent')
                     .attr('d', d3Line([source, target]))
@@ -51,7 +52,7 @@
             }
         });
 
-        polygons.map(({x, y}, i) => {
+        polygons.map(({x, y, isSelected}, i) => {
             const points = [
                 {x: x - polygonWidth / 2, y: y - polygonWidth / 2},
                 {x: x + polygonWidth / 2, y: y - polygonWidth / 2},
@@ -75,7 +76,7 @@
                 .attr('index', i)
                 .attr('data-x', x)
                 .attr('data-y', y)
-                .attr('fill:lime;stroke:purple;stroke-width:1')
+                .attr('fill', isSelected ? 'red' : 'black')
         });
     }
 
@@ -84,10 +85,13 @@
             if (selectedPoint.name !== polygons[i].name) {
                 addLink(selectedPoint.name, polygons[i].name);
             }
+            selectedPoint.isSelected = false;
             selectedPoint = undefined;
         } else {
+            polygons[i].isSelected = true;
             selectedPoint = polygons[i];
         }
+        updateSVG();
     }
 
     function checkIfLinkExists (currentSource, currentTarget) {
