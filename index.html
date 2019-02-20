@@ -23,7 +23,7 @@
 
     const polygons = [];
 
-    const lines = [];
+    const links = [];
 
     function updateSVG () {
         svg.selectAll('*').remove();
@@ -34,7 +34,7 @@
             .y(d => d.y)
             .interpolate('basis');
 
-        lines.map(({source, target}, i) => {
+        links.map(({source, target}, i) => {
             source = getCoordinateByName(source);
             target = getCoordinateByName(target);
 
@@ -46,7 +46,7 @@
                     .attr('fill', 'transparent')
                     .attr('d', d3Line([source, target]))
                     .on({
-                        'click': removeLine.bind(this, i)
+                        'click': removeLink.bind(this, i)
                     });
             }
         });
@@ -82,20 +82,32 @@
     function polygonClick (i) {
         if (selectedPoint) {
             if (selectedPoint.name !== polygons[i].name) {
-                lines.push({
-                    source: selectedPoint.name,
-                    target: polygons[i].name
-                })
+                addLink(selectedPoint.name, polygons[i].name);
             }
             selectedPoint = undefined;
-            updateSVG();
         } else {
             selectedPoint = polygons[i];
         }
     }
 
-    function removeLine (i) {
-        lines.splice(i, 1);
+    function checkIfLinkExists (currentSource, currentTarget) {
+        return !!links.find(({source, target}) => {
+            return (currentSource === source && currentTarget === target) || (currentSource === target && currentTarget === source)
+        })
+    }
+
+    function addLink (source, target) {
+        if (!checkIfLinkExists(source, target)) {
+            links.push({
+                source,
+                target
+            });
+            updateSVG();
+        }
+    }
+
+    function removeLink (i) {
+        links.splice(i, 1);
         updateSVG();
     }
 
