@@ -12,43 +12,50 @@
 </head>
 <body>
 <svg width='500' height='500'>
+    <defs>
+        <marker id="arrow" markerWidth="10" markerHeight="10" refX="12" refY="3" orient="auto"
+                markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#000"/>
+        </marker>
+    </defs>
 </svg>
 <button onclick='addButton()'>Add Box</button>
+<button onclick='deleteBox()'>Delete Box</button>
 <script src='https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js'></script>
 <script src='https://cdn.jsdelivr.net/npm/interactjs@1.3.4/dist/interact.min.js'></script>
 <script>
     const svg = d3.select('svg');
-    const polygonWidth = 20;
+    const polygonWidth = 30;
     const lineStroke = 3;
     let selectedPoint;
 
     const polygons = [];
 
-    const links = [];
+    let links = [];
 
     function updateSVG () {
-        svg.selectAll('*').remove();
-
-        const d3Line = d3.svg
-            .line()
-            .x(d => d.x)
-            .y(d => d.y)
-            .interpolate('basis');
+        svg.selectAll('polygon').remove();
+        svg.selectAll('line').remove();
 
         links.map(({source, target}, i) => {
-            source = getCoordinateByName(source);
-            target = getCoordinateByName(target);
+            source = getCoordinateByIndex(source);
+            target = getCoordinateByIndex(target);
 
             if (source && target) {
                 svg
-                    .append('path')
+                    .append('line')
                     .attr('stroke-width', lineStroke)
                     .attr('stroke', 'black')
-                    .attr('fill', 'transparent')
-                    .attr('d', d3Line([source, target]))
+                    .attr('x1', source.x)
+                    .attr('y1', source.y)
+                    .attr('x2', target.x)
+                    .attr('y2', target.y)
+                    .attr('marker-end', 'url(#arrow)')
                     .on({
                         'click': removeLink.bind(this, i)
-                    });
+                    })
+
+                ;
             }
         });
 
@@ -81,22 +88,27 @@
     }
 
     function polygonClick (i) {
-        if (selectedPoint) {
-            if (selectedPoint.name !== polygons[i].name) {
-                addLink(selectedPoint.name, polygons[i].name);
+        if (selectedPoint !== undefined) {
+            if (selectedPoint !== i) {
+                addLink(selectedPoint, i);
             }
-            selectedPoint.isSelected = false;
+            polygons[selectedPoint].isSelected = false;
             selectedPoint = undefined;
         } else {
-            polygons[i].isSelected = true;
-            selectedPoint = polygons[i];
+            selectedPoint = i;
+            polygons[selectedPoint].isSelected = true;
         }
         updateSVG();
     }
 
+    function toggleDeleteButton () {
+
+    }
+
     function checkIfLinkExists (currentSource, currentTarget) {
         return !!links.find(({source, target}) => {
-            return (currentSource === source && currentTarget === target) || (currentSource === target && currentTarget === source)
+            // return (currentSource === source && currentTarget === target) || (currentSource === target && currentTarget === source)
+            return (currentSource === source && currentTarget === target)
         })
     }
 
@@ -115,8 +127,8 @@
         updateSVG();
     }
 
-    function getCoordinateByName (name) {
-        const polygon = findPolygonByName(name);
+    function getCoordinateByIndex (index) {
+        const polygon = findPolygonByIndex(index);
         if (polygon) {
             return {
                 x: polygon.x,
@@ -125,8 +137,8 @@
         }
     }
 
-    function findPolygonByName (name) {
-        return polygons.find(({name: polygonName}) => polygonName === name);
+    function findPolygonByIndex (index) {
+        return polygons[index];
     }
 
     function updatePolygonPosition (i, x, y) {
@@ -139,7 +151,6 @@
     function addPolygon (x, y) {
         polygons.push(
             {
-                name: polygons.length + 1,
                 x,
                 y,
             }
@@ -178,6 +189,36 @@
 <script>
     function addButton () {
         addPolygon(250, 250);
+    }
+
+    function deleteBox () {
+        if (selectedPoint !== undefined) {
+            links = links.filter(({source, target}) => {
+                return !(source === selectedPoint || target === selectedPoint);
+            });
+
+            links = links.map(({source, target}) => {
+                if (source > selectedPoint) {
+                    source = source - 1;
+                }
+
+                if (target > selectedPoint) {
+                    target = target - 1;
+                }
+
+                return {
+                    source,
+                    target
+                }
+            });
+
+            polygons[selectedPoint].isSelected = false;
+            polygons.splice(selectedPoint, 1);
+            selectedPoint = undefined;
+            updateSVG();
+        } else {
+            alert('No Box Selected');
+        }
     }
 </script>
 <script>
