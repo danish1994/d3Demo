@@ -1,0 +1,7 @@
+svg {
+  border: 2px solid black;
+}
+
+svg > * {
+  cursor: pointer;
+}
